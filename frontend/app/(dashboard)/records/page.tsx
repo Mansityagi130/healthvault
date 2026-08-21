@@ -6,6 +6,7 @@ import { fetchWithAuth } from "@/lib/api-client";
 import { Button } from "@/components/ui/Button";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { Card, CardContent, CardHeader } from "@/components/ui/Card";
+import { FilterPopover } from "@/components/ui/FilterPopover";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
@@ -142,27 +143,22 @@ export default function RecordsPage() {
         </Link>
       </div>
 
-      {/* Search */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <SearchBar onSearch={handleSearch} initialValue={search} placeholder="Search records by title..." />
-      </div>
-
-      {/* Filters (Scrollable on mobile) */}
-      <div className="flex overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide gap-2">
-        {CATEGORIES.map((cat) => (
-          <button
-            key={cat.value}
-            onClick={() => handleCategoryChange(cat.value)}
-            className={`
-              whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-              ${category === cat.value 
-                ? "bg-teal-700 text-white" 
-                : "bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 hover:text-slate-900"}
-            `}
-          >
-            {cat.label}
-          </button>
-        ))}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex-1">
+          <SearchBar onSearch={handleSearch} initialValue={search} placeholder="Search records by title..." />
+        </div>
+        <FilterPopover 
+          groups={[{
+            id: "category",
+            label: "Category",
+            options: CATEGORIES.filter(c => c.value !== "").map(c => ({
+              label: c.label,
+              value: c.value
+            }))
+          }]} 
+          activeFilters={category ? { category } : {}} 
+          onFilterChange={(f) => handleCategoryChange(f.category || "")} 
+        />
       </div>
 
       {/* Content */}

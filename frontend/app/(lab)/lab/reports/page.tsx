@@ -1,50 +1,52 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { fetchWithAuth } from "@/lib/api-client";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Building2 } from "lucide-react";
+import { FlaskConical, ChevronRight } from "lucide-react";
 import { SearchBar } from "@/components/ui/SearchBar";
 import { FilterPopover } from "@/components/ui/FilterPopover";
+import { Button } from "@/components/ui/Button";
 
-export default function HospitalEncountersPage() {
-  const [encounters, setEncounters] = useState<any[]>([]);
+export default function LabReportsPage() {
+  const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hospitalId, setHospitalId] = useState<string | null>(null);
+  const [labId, setLabId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      let hId = hospitalId;
-      if (!hId) {
-        const hRes = await fetchWithAuth("/hospital/memberships");
-        const memberships = await hRes.json();
+      let lId = labId;
+      if (!lId) {
+        const lRes = await fetchWithAuth("/lab/memberships");
+        const memberships = await lRes.json();
         if (memberships && memberships.length > 0) {
-          hId = memberships[0].hospitalId;
-          setHospitalId(hId);
+          lId = memberships[0].labId;
+          setLabId(lId);
         }
       }
       
-      if (hId) {
+      if (lId) {
         const qs = new URLSearchParams();
         if (search) qs.set("search", search);
         if (filters.status) qs.set("status", filters.status);
         
-        const res = await fetchWithAuth(`/hospitals/${hId}/encounters?${qs.toString()}`);
+        const res = await fetchWithAuth(`/labs/${lId}/reports?${qs.toString()}`);
         const data = await res.json();
-        setEncounters(data.items || data || []);
+        setReports(data.items || data || []);
       }
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [hospitalId, search, filters]);
+  }, [labId, search, filters]);
 
   useEffect(() => {
     load();
@@ -55,11 +57,8 @@ export default function HospitalEncountersPage() {
       id: "status",
       label: "Status",
       options: [
-        { label: "Scheduled", value: "SCHEDULED" },
-        { label: "Checked In", value: "CHECKED_IN" },
-        { label: "In Progress", value: "IN_PROGRESS" },
-        { label: "Completed", value: "COMPLETED" },
-        { label: "Cancelled", value: "CANCELLED" },
+        { label: "Lab Verified", value: "LAB_VERIFIED" },
+        { label: "Hospital Created", value: "HOSPITAL_CREATED" }
       ]
     }
   ];
@@ -68,41 +67,45 @@ export default function HospitalEncountersPage() {
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Hospital Encounters</h1>
-          <p className="text-slate-500 mt-1">Manage active patient encounters.</p>
+          <h1 className="text-2xl font-bold text-slate-900">Lab Reports</h1>
+          <p className="text-slate-500 mt-1">Manage and search laboratory reports.</p>
         </div>
+        <Link href="/lab/reports/new">
+          <Button variant="primary" className="gap-2 w-full sm:w-auto">
+            <FlaskConical size={16} />
+            Create Report
+          </Button>
+        </Link>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="flex-1">
-          <SearchBar onSearch={setSearch} initialValue={search} placeholder="Search by patient name, department..." />
+          <SearchBar onSearch={setSearch} initialValue={search} placeholder="Search by patient name, title..." />
         </div>
         <FilterPopover groups={filterGroups} activeFilters={filters} onFilterChange={setFilters} />
       </div>
 
       {loading ? (
         <Skeleton className="h-24 w-full" />
-      ) : encounters.length === 0 ? (
+      ) : reports.length === 0 ? (
         <EmptyState 
-          icon={Building2} 
-          title={search || Object.keys(filters).length > 0 ? "No encounters match your search" : "No encounters found"} 
-          description={search || Object.keys(filters).length > 0 ? "Try adjusting your filters or search term." : "There are no encounters for this hospital."} 
+          icon={FlaskConical} 
+          title={search || Object.keys(filters).length > 0 ? "No reports match your search" : "No reports found"} 
+          description={search || Object.keys(filters).length > 0 ? "Try adjusting your filters or search term." : "There are no reports generated by this laboratory yet."} 
         />
       ) : (
         <div className="space-y-4">
-          {encounters.map(enc => (
-            <Card key={enc.id} className="hover:shadow-md transition-shadow">
+          {reports.map(rep => (
+            <Card key={rep.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-bold text-teal-700">{enc.type}</span>
-                    <Badge>{enc.status}</Badge>
+                    <span className="text-xs font-bold text-teal-700">{rep.category}</span>
+                    <Badge>{rep.provenanceStatus}</Badge>
                   </div>
-                  <h3 className="font-semibold text-slate-900">
-                    Patient: {enc.patient?.firstName} {enc.patient?.lastName}
-                  </h3>
+                  <h3 className="font-semibold text-slate-900">{rep.title}</h3>
                   <p className="text-sm text-slate-500">
-                    Provider: {enc.provider ? `Dr. ${enc.provider.firstName || ''}` : 'Unassigned'}
+                    Patient: {rep.patient?.firstName} {rep.patient?.lastName}
                   </p>
                 </div>
               </CardContent>
