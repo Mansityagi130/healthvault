@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.*
+.next/
+dist/
+build/
+coverage/
+*.log
+uploads/
+.vscode/
+.DS_Store
+Thumbs.db
+backend/src/generated/prisma/

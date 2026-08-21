@@ -1,0 +1,902 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  DEACTIVATED
+}
+
+enum ProfileVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum MembershipRole {
+  DOCTOR
+  HOSPITAL_ADMIN
+  STAFF
+  LAB_USER
+  LAB_ADMIN
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum RecordCategory {
+  CONSULTATION
+  PRESCRIPTION
+  LAB_REPORT
+  IMAGING
+  DISCHARGE_SUMMARY
+  VACCINATION
+  OTHER
+}
+
+enum RecordSource {
+  PATIENT
+  DOCTOR
+  HOSPITAL
+  LAB
+}
+
+enum ProvenanceStatus {
+  PATIENT_UPLOADED
+  PROVIDER_CREATED
+  HOSPITAL_CREATED
+  LAB_VERIFIED
+}
+
+enum LabReportStatus {
+  DRAFT
+  FINALIZED
+  AMENDED
+  CANCELLED
+}
+
+enum LabResultValueType {
+  NUMERIC
+  TEXT
+  QUALITATIVE
+}
+
+enum LabResultStatus {
+  NORMAL
+  HIGH
+  LOW
+  CRITICAL
+  ABNORMAL
+  UNSPECIFIED
+}
+
+enum RecordLifecycleStatus {
+  ACTIVE
+  ARCHIVED
+  SUPERSEDED
+  REVOKED
+}
+
+enum DocumentVerificationStatus {
+  UNVERIFIED
+  VERIFIED
+  REJECTED
+}
+
+enum ConsentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum ConsentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  REVOKED
+}
+
+enum SharingSessionStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  COMPLETED
+}
+
+enum QRUsageMode {
+  ONE_TIME
+  CONTROLLED_REUSE
+}
+
+enum AccessAction {
+  VIEW
+  DOWNLOAD
+  CREATE
+  UPDATE
+  EMERGENCY_VIEW
+}
+
+enum AccessOutcome {
+  ALLOWED
+  DENIED
+}
+
+enum EncounterType {
+  OUTPATIENT
+  INPATIENT
+  EMERGENCY
+  FOLLOW_UP
+}
+
+enum EncounterStatus {
+  SCHEDULED
+  CHECKED_IN
+  IN_PROGRESS
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum AuditAction {
+  REGISTER
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  TOKEN_REFRESH
+  SESSION_REVOKED
+  CONSENT_REQUESTED
+  CONSENT_APPROVED
+  CONSENT_REJECTED
+  CONSENT_REVOKED
+  SHARING_SESSION_CREATED
+  SHARING_SESSION_REVOKED
+  QR_SESSION_CREATED
+  QR_SESSION_REVOKED
+  RECORD_UPLOADED
+  RECORD_VIEWED
+  RECORD_DOWNLOADED
+  MEMBERSHIP_CREATED
+  MEMBERSHIP_UPDATED
+  MEMBERSHIP_ACTIVATED
+  MEMBERSHIP_DEACTIVATED
+  MEMBERSHIP_REVOKED
+  ENCOUNTER_CREATED
+  ENCOUNTER_ACTIVATED
+  ENCOUNTER_CHECKED_IN
+  ENCOUNTER_STARTED
+  ENCOUNTER_PROVIDER_ASSIGNED
+  ENCOUNTER_COMPLETED
+  ENCOUNTER_CANCELLED
+  ENCOUNTER_VIEWED
+  DEPARTMENT_ASSIGNED
+  EMERGENCY_PROFILE_ACCESSED
+  QR_SCAN_SUCCESS
+  PROVIDER_QR_SCAN
+  SHARED_RECORD_VIEWED
+  SHARED_DOCUMENT_VIEWED
+  SHARING_ACCESS_DENIED
+  LAB_ASSOCIATION_CREATED
+  LAB_ASSOCIATION_QR_RESOLVED
+  LAB_ASSOCIATION_APPROVED
+  LAB_ASSOCIATION_REVOKED
+  LAB_ASSOCIATION_EXPIRED
+}
+
+enum NotificationType {
+  CONSENT_REQUEST
+  CONSENT_DECISION
+  SHARING_SESSION
+  SECURITY
+  SYSTEM
+  ENCOUNTER_CREATED
+  ENCOUNTER_UPDATED
+  LAB_REPORT_FINALIZED
+  LAB_ASSOCIATION_APPROVED
+  LAB_ASSOCIATION_REVOKED
+  DOCUMENT_UPLOADED
+  PRESCRIPTION_ADDED
+}
+
+enum NotificationStatus {
+  PENDING
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum ExternalReferenceStatus {
+  PENDING
+  VERIFIED
+  SYNCED
+  FAILED
+  REVOKED
+}
+
+model User {
+  id                  String               @id @default(uuid()) @db.Uuid
+  publicId            String               @unique @default(uuid()) @db.Uuid
+  authSubject         String?              @unique
+  email               String?              @unique
+  phone               String?              @unique
+  passwordHash        String?
+  status              AccountStatus        @default(ACTIVE)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  patientProfile      PatientProfile?
+  doctorProfile       DoctorProfile?
+  hospitalMemberships HospitalMembership[]
+  labMemberships      LabMembership[]
+  createdRecords      MedicalRecord[]      @relation("MedicalRecordCreator")
+  createdLabReports   LabReport[]          @relation("LabReportCreator")
+  uploadedDocuments   MedicalDocument[]    @relation("DocumentUploader")
+  consentRequests     ConsentRequest[]     @relation("ConsentRequester")
+  receivedConsents    Consent[]            @relation("ConsentGrantee")
+  revokedConsents     Consent[]            @relation("ConsentRevoker")
+  sharingSessions     SharingSession[]     @relation("SharingSessionGrantee")
+  accessLogs          AccessLog[]          @relation("AccessLogActor")
+  auditLogs           AuditLog[]           @relation("AuditLogActor")
+  notifications       Notification[]
+  externalIdentities  ExternalIdentity[]
+  authSessions        AuthSession[]
+  encounters          Encounter[]          @relation("EncounterProvider")
+}
+
+model PatientProfile {
+  id                String                  @id @default(uuid()) @db.Uuid
+  publicId          String                  @unique @default(uuid()) @db.Uuid
+  userId            String                  @unique @db.Uuid
+  firstName         String?
+  lastName          String?
+  phone             String?
+  dateOfBirth       DateTime?
+  sexAtBirth        String?
+  preferredLanguage String?
+  profileImageRef   String?
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  user              User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  medicalRecords    MedicalRecord[]
+  consentRequests   ConsentRequest[]
+  consents          Consent[]
+  sharingSessions   SharingSession[]
+  emergencyProfile  EmergencyProfile?
+  accessLogs        AccessLog[]
+  encounters        Encounter[]
+  labAssociations   PatientLabAssociation[]
+  labPairingTokens  LabPairingToken[]
+  registrationTokens RegistrationPairingToken[]
+}
+
+model DoctorProfile {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  publicId           String                    @unique @default(uuid()) @db.Uuid
+  userId             String                    @unique @db.Uuid
+  registrationNumber String                    @unique
+  specialty          String?
+  verificationStatus ProfileVerificationStatus @default(PENDING)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  user               User                      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  consultations      Consultation[]
+  prescriptions      Prescription[]
+}
+
+enum HospitalStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model Hospital {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  publicId           String                    @unique @default(uuid()) @db.Uuid
+  name               String
+  code               String                    @unique @default(uuid()) // Enforce unique code
+  address            Json?
+  status             HospitalStatus            @default(ACTIVE)
+  verificationStatus ProfileVerificationStatus @default(PENDING)
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  memberships        HospitalMembership[]
+  departments        Department[]
+  medicalRecords     MedicalRecord[]
+  consultations      Consultation[]
+  dischargeSummaries DischargeSummary[]
+  consentRequests    ConsentRequest[]
+  encounters         Encounter[]
+}
+
+model Department {
+  id          String               @id @default(uuid()) @db.Uuid
+  hospitalId  String               @db.Uuid
+  name        String
+  code        String               @unique @default(uuid())
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  hospital    Hospital             @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  memberships HospitalMembership[]
+  encounters  Encounter[]
+
+  @@unique([hospitalId, name])
+}
+
+model HospitalMembership {
+  id           String           @id @default(uuid()) @db.Uuid
+  hospitalId   String           @db.Uuid
+  departmentId String?          @db.Uuid
+  userId       String           @db.Uuid
+  role         MembershipRole
+  status       MembershipStatus @default(ACTIVE)
+  startsAt     DateTime         @default(now())
+  endsAt       DateTime?
+  verifiedAt   DateTime?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  hospital     Hospital         @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  department   Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([hospitalId, userId, departmentId])
+  @@index([hospitalId, status])
+  @@index([userId, status])
+}
+
+model Lab {
+  id                  String                    @id @default(uuid()) @db.Uuid
+  publicId            String                    @unique @default(uuid()) @db.Uuid
+  name                String
+  address             Json?
+  verificationStatus  ProfileVerificationStatus @default(PENDING)
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  memberships         LabMembership[]
+  medicalRecords      MedicalRecord[]
+  labReports          LabReport[]
+  patientAssociations PatientLabAssociation[]
+}
+
+model LabMembership {
+  id         String           @id @default(uuid()) @db.Uuid
+  labId      String           @db.Uuid
+  userId     String           @db.Uuid
+  role       MembershipRole
+  status     MembershipStatus @default(ACTIVE)
+  startsAt   DateTime         @default(now())
+  endsAt     DateTime?
+  verifiedAt DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  lab        Lab              @relation(fields: [labId], references: [id], onDelete: Restrict)
+  user       User             @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([labId, userId])
+  @@index([labId, status])
+  @@index([userId, status])
+}
+
+model MedicalRecord {
+  id                 String                    @id @default(uuid()) @db.Uuid
+  publicId           String                    @unique @default(uuid()) @db.Uuid
+  patientId          String                    @db.Uuid
+  category           RecordCategory
+  source             RecordSource
+  provenanceStatus   ProvenanceStatus
+  lifecycleStatus    RecordLifecycleStatus     @default(ACTIVE)
+  title              String?
+  occurredAt         DateTime
+  issuedAt           DateTime?
+  createdByUserId    String?                   @db.Uuid
+  hospitalId         String?                   @db.Uuid
+  labId              String?                   @db.Uuid
+  supersedesRecordId String?                   @db.Uuid
+  createdAt          DateTime                  @default(now())
+  updatedAt          DateTime                  @updatedAt
+  patient            PatientProfile            @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  createdByUser      User?                     @relation("MedicalRecordCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  hospital           Hospital?                 @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  lab                Lab?                      @relation(fields: [labId], references: [id], onDelete: Restrict)
+  supersedesRecord   MedicalRecord?            @relation("RecordSupersession", fields: [supersedesRecordId], references: [id], onDelete: Restrict)
+  supersededBy       MedicalRecord[]           @relation("RecordSupersession")
+  documents          MedicalDocument[]
+  consultation       Consultation?
+  prescription       Prescription?
+  labReport          LabReport?
+  imagingRecord      ImagingRecord?
+  dischargeSummary   DischargeSummary?
+  vaccinationRecord  VaccinationRecord?
+  accessLogs         AccessLog[]
+  externalReferences ExternalRecordReference[]
+  encounter          Encounter?                @relation(fields: [encounterId], references: [id])
+  encounterId        String?                   @db.Uuid
+
+  @@index([patientId, issuedAt(sort: Desc), createdAt(sort: Desc)])
+  @@index([patientId, category, issuedAt(sort: Desc)])
+  @@index([supersedesRecordId])
+}
+
+model MedicalDocument {
+  id                 String                     @id @default(uuid()) @db.Uuid
+  medicalRecordId    String                     @db.Uuid
+  storageKey         String                     @unique
+  originalFilename   String
+  mimeType           String
+  byteSize           BigInt
+  checksum           String
+  verificationStatus DocumentVerificationStatus @default(UNVERIFIED)
+  uploadedByUserId   String?                    @db.Uuid
+  uploadedAt         DateTime                   @default(now())
+  createdAt          DateTime                   @default(now())
+  updatedAt          DateTime                   @updatedAt
+  medicalRecord      MedicalRecord              @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+  uploadedByUser     User?                      @relation("DocumentUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([medicalRecordId, uploadedAt(sort: Desc)])
+}
+
+model Consultation {
+  id              String         @id @default(uuid()) @db.Uuid
+  medicalRecordId String         @unique @db.Uuid
+  doctorProfileId String?        @db.Uuid
+  hospitalId      String?        @db.Uuid
+  encounterAt     DateTime
+  clinicalSummary Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  medicalRecord   MedicalRecord  @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+  doctorProfile   DoctorProfile? @relation(fields: [doctorProfileId], references: [id], onDelete: Restrict)
+  hospital        Hospital?      @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+
+  @@index([doctorProfileId, encounterAt(sort: Desc)])
+}
+
+model Prescription {
+  id              String             @id @default(uuid()) @db.Uuid
+  medicalRecordId String             @unique @db.Uuid
+  doctorProfileId String?            @db.Uuid
+  issuedAt        DateTime
+  instructions    String?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  medicalRecord   MedicalRecord      @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+  doctorProfile   DoctorProfile?     @relation(fields: [doctorProfileId], references: [id], onDelete: Restrict)
+  items           PrescriptionItem[]
+
+  @@index([doctorProfileId, issuedAt(sort: Desc)])
+}
+
+model PrescriptionItem {
+  id             String       @id @default(uuid()) @db.Uuid
+  prescriptionId String       @db.Uuid
+  medicationName String
+  dosage         String?
+  frequency      String?
+  duration       String?
+  quantity       String?
+  instructions   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Restrict)
+
+  @@index([prescriptionId])
+}
+
+model LabReport {
+  id              String          @id @default(uuid()) @db.Uuid
+  medicalRecordId String          @unique @db.Uuid
+  labId           String          @db.Uuid
+  createdByUserId String?         @db.Uuid
+  status          LabReportStatus @default(DRAFT)
+  collectedAt     DateTime?
+  reportedAt      DateTime
+  reportMetadata  Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  medicalRecord   MedicalRecord   @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+  lab             Lab             @relation(fields: [labId], references: [id], onDelete: Restrict)
+  createdByUser   User?           @relation("LabReportCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  results         LabResult[]
+
+  @@index([labId, reportedAt(sort: Desc)])
+}
+
+model LabResult {
+  id             String             @id @default(uuid()) @db.Uuid
+  labReportId    String             @db.Uuid
+  testName       String
+  testCode       String?
+  value          String
+  valueType      LabResultValueType
+  unit           String?
+  referenceRange String?
+  status         LabResultStatus    @default(UNSPECIFIED)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  labReport      LabReport          @relation(fields: [labReportId], references: [id], onDelete: Cascade)
+
+  @@index([labReportId])
+}
+
+model ImagingRecord {
+  id              String        @id @default(uuid()) @db.Uuid
+  medicalRecordId String        @unique @db.Uuid
+  modality        String?
+  imagingProvider String?
+  studyAt         DateTime?
+  reportMetadata  Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+}
+
+model DischargeSummary {
+  id              String        @id @default(uuid()) @db.Uuid
+  medicalRecordId String        @unique @db.Uuid
+  hospitalId      String?       @db.Uuid
+  admittedAt      DateTime?
+  dischargedAt    DateTime?
+  summaryMetadata Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+  hospital        Hospital?     @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+
+  @@index([hospitalId, dischargedAt(sort: Desc)])
+}
+
+model VaccinationRecord {
+  id              String        @id @default(uuid()) @db.Uuid
+  medicalRecordId String        @unique @db.Uuid
+  vaccineName     String
+  administeredAt  DateTime
+  providerName    String?
+  batchNumber     String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+}
+
+model ConsentRequest {
+  id                  String                @id @default(uuid()) @db.Uuid
+  patientId           String                @db.Uuid
+  requesterUserId     String                @db.Uuid
+  requesterHospitalId String?               @db.Uuid
+  purpose             String
+  status              ConsentRequestStatus  @default(PENDING)
+  requestedAt         DateTime              @default(now())
+  expiresAt           DateTime
+  decidedAt           DateTime?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  patient             PatientProfile        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  requester           User                  @relation("ConsentRequester", fields: [requesterUserId], references: [id], onDelete: Restrict)
+  requesterHospital   Hospital?             @relation(fields: [requesterHospitalId], references: [id], onDelete: Restrict)
+  scopes              ConsentRequestScope[]
+  resultingConsent    Consent?              @relation("ConsentRequestResult")
+
+  @@index([patientId, status, expiresAt])
+  @@index([requesterUserId, status, expiresAt])
+}
+
+model ConsentRequestScope {
+  id               String         @id @default(uuid()) @db.Uuid
+  consentRequestId String         @db.Uuid
+  recordCategory   RecordCategory
+  createdAt        DateTime       @default(now())
+  consentRequest   ConsentRequest @relation(fields: [consentRequestId], references: [id], onDelete: Restrict)
+
+  @@unique([consentRequestId, recordCategory])
+}
+
+model Consent {
+  id               String           @id @default(uuid()) @db.Uuid
+  patientId        String           @db.Uuid
+  granteeUserId    String           @db.Uuid
+  consentRequestId String?          @unique @db.Uuid
+  purpose          String
+  status           ConsentStatus    @default(PENDING)
+  approvedAt       DateTime?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revokedByUserId  String?          @db.Uuid
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  patient          PatientProfile   @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  grantee          User             @relation("ConsentGrantee", fields: [granteeUserId], references: [id], onDelete: Restrict)
+  revokedBy        User?            @relation("ConsentRevoker", fields: [revokedByUserId], references: [id], onDelete: SetNull)
+  consentRequest   ConsentRequest?  @relation("ConsentRequestResult", fields: [consentRequestId], references: [id], onDelete: Restrict)
+  scopes           ConsentScope[]
+  sharingSessions  SharingSession[]
+  accessLogs       AccessLog[]
+
+  @@index([patientId, status, expiresAt])
+  @@index([granteeUserId, status, expiresAt])
+}
+
+model ConsentScope {
+  id             String         @id @default(uuid()) @db.Uuid
+  consentId      String         @db.Uuid
+  recordCategory RecordCategory
+  createdAt      DateTime       @default(now())
+  consent        Consent        @relation(fields: [consentId], references: [id], onDelete: Restrict)
+
+  @@unique([consentId, recordCategory])
+}
+
+model SharingSession {
+  id              String                @id @default(uuid()) @db.Uuid
+  patientId       String                @db.Uuid
+  granteeUserId   String                @db.Uuid
+  consentId       String                @db.Uuid
+  purposeSnapshot String
+  status          SharingSessionStatus  @default(ACTIVE)
+  startsAt        DateTime              @default(now())
+  expiresAt       DateTime
+  revokedAt       DateTime?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  patient         PatientProfile        @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  grantee         User                  @relation("SharingSessionGrantee", fields: [granteeUserId], references: [id], onDelete: Restrict)
+  consent         Consent               @relation(fields: [consentId], references: [id], onDelete: Restrict)
+  scopes          SharingSessionScope[]
+  qrSessions      QRSession[]
+  accessLogs      AccessLog[]
+
+  @@index([consentId, status, expiresAt])
+  @@index([patientId, status, expiresAt])
+  @@index([granteeUserId, status, expiresAt])
+}
+
+model SharingSessionScope {
+  id               String         @id @default(uuid()) @db.Uuid
+  sharingSessionId String         @db.Uuid
+  recordCategory   RecordCategory
+  createdAt        DateTime       @default(now())
+  sharingSession   SharingSession @relation(fields: [sharingSessionId], references: [id], onDelete: Restrict)
+
+  @@unique([sharingSessionId, recordCategory])
+}
+
+model QRSession {
+  id               String         @id @default(uuid()) @db.Uuid
+  sharingSessionId String         @db.Uuid
+  selector         String         @unique
+  tokenHash        String         @unique
+  usageMode        QRUsageMode
+  maxUses          Int?
+  useCount         Int            @default(0)
+  consumedAt       DateTime?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  sharingSession   SharingSession @relation(fields: [sharingSessionId], references: [id], onDelete: Restrict)
+
+  @@index([expiresAt, revokedAt])
+  @@index([sharingSessionId, expiresAt])
+}
+
+model EmergencyProfile {
+  id                   String                        @id @default(uuid()) @db.Uuid
+  patientId            String                        @unique @db.Uuid
+  bloodGroup           String?
+  allergies            Json?
+  emergencyMedications Json?
+  criticalConditions   Json?
+  emergencyContact     Json?
+  isActive             Boolean                       @default(false)
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
+  patient              PatientProfile                @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  accessTokens         EmergencyProfileAccessToken[]
+}
+
+model EmergencyProfileAccessToken {
+  id                 String           @id @default(uuid()) @db.Uuid
+  emergencyProfileId String           @db.Uuid
+  selector           String           @unique
+  tokenHash          String           @unique
+  usageMode          QRUsageMode
+  maxUses            Int?
+  useCount           Int              @default(0)
+  consumedAt         DateTime?
+  expiresAt          DateTime
+  revokedAt          DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  emergencyProfile   EmergencyProfile @relation(fields: [emergencyProfileId], references: [id], onDelete: Restrict)
+
+  @@index([expiresAt, revokedAt])
+  @@index([emergencyProfileId, expiresAt])
+}
+
+model AccessLog {
+  id               String          @id @default(uuid()) @db.Uuid
+  actorUserId      String?         @db.Uuid
+  patientId        String          @db.Uuid
+  medicalRecordId  String?         @db.Uuid
+  consentId        String?         @db.Uuid
+  sharingSessionId String?         @db.Uuid
+  resourceType     String
+  resourceId       String
+  action           AccessAction
+  outcome          AccessOutcome
+  purpose          String?
+  correlationId    String?
+  metadata         Json?
+  occurredAt       DateTime        @default(now())
+  actor            User?           @relation("AccessLogActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  patient          PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  medicalRecord    MedicalRecord?  @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+  consent          Consent?        @relation(fields: [consentId], references: [id], onDelete: Restrict)
+  sharingSession   SharingSession? @relation(fields: [sharingSessionId], references: [id], onDelete: Restrict)
+
+  @@index([patientId, occurredAt(sort: Desc)])
+  @@index([actorUserId, occurredAt(sort: Desc)])
+  @@index([medicalRecordId, occurredAt(sort: Desc)])
+  @@index([correlationId])
+}
+
+model AuditLog {
+  id            String      @id @default(uuid()) @db.Uuid
+  actorUserId   String?     @db.Uuid
+  action        AuditAction
+  targetType    String?
+  targetId      String?
+  correlationId String?
+  metadata      Json?
+  occurredAt    DateTime    @default(now())
+  actor         User?       @relation("AuditLogActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId, occurredAt(sort: Desc)])
+  @@index([targetType, targetId, occurredAt(sort: Desc)])
+  @@index([correlationId])
+}
+
+model Notification {
+  id          String             @id @default(uuid()) @db.Uuid
+  userId      String             @db.Uuid
+  type        NotificationType
+  status      NotificationStatus @default(PENDING)
+  payload     Json?
+  deliveredAt DateTime?
+  readAt      DateTime?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  user        User               @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, createdAt(sort: Desc)])
+}
+
+model ExternalIdentity {
+  id                  String                  @id @default(uuid()) @db.Uuid
+  userId              String                  @db.Uuid
+  externalSystem      String
+  identifierType      String
+  identifierEncrypted String
+  identifierHash      String
+  status              ExternalReferenceStatus @default(PENDING)
+  verifiedAt          DateTime?
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  user                User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([externalSystem, identifierHash])
+  @@index([userId, externalSystem])
+}
+
+model ExternalRecordReference {
+  id                         String                  @id @default(uuid()) @db.Uuid
+  medicalRecordId            String                  @db.Uuid
+  externalSystem             String
+  externalReferenceEncrypted String
+  externalReferenceHash      String
+  status                     ExternalReferenceStatus @default(PENDING)
+  syncedAt                   DateTime?
+  createdAt                  DateTime                @default(now())
+  updatedAt                  DateTime                @updatedAt
+  medicalRecord              MedicalRecord           @relation(fields: [medicalRecordId], references: [id], onDelete: Restrict)
+
+  @@unique([externalSystem, externalReferenceHash])
+  @@index([medicalRecordId, externalSystem])
+}
+
+model AuthSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @db.Uuid
+  refreshTokenHash String    @unique
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  lastUsedAt       DateTime  @default(now())
+  familyId         String    @default(uuid()) @db.Uuid
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([refreshTokenHash])
+}
+
+model Encounter {
+  id           String          @id @default(uuid()) @db.Uuid
+  patientId    String          @db.Uuid
+  hospitalId   String          @db.Uuid
+  departmentId String?         @db.Uuid
+  providerId   String?         @db.Uuid
+  type         EncounterType
+  status       EncounterStatus @default(SCHEDULED)
+  reason       String?
+
+  startedAt DateTime?
+  endedAt   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  patient    PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  hospital   Hospital        @relation(fields: [hospitalId], references: [id], onDelete: Restrict)
+  department Department?     @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  provider   User?           @relation("EncounterProvider", fields: [providerId], references: [id], onDelete: SetNull)
+  records    MedicalRecord[]
+
+  @@index([patientId, status])
+  @@index([hospitalId, status])
+  @@index([providerId, status])
+}
+
+enum AssociationStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  REVOKED
+}
+
+model PatientLabAssociation {
+  id        String            @id @default(uuid()) @db.Uuid
+  patientId String            @db.Uuid
+  labId     String            @db.Uuid
+  status    AssociationStatus @default(PENDING)
+  expiresAt DateTime?
+  revokedAt DateTime?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+  lab     Lab            @relation(fields: [labId], references: [id], onDelete: Restrict)
+
+  @@unique([patientId, labId])
+  @@index([labId, status])
+  @@index([patientId, status])
+}
+
+model LabPairingToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  patientId String   @db.Uuid
+  selector  String   @unique
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model RegistrationPairingToken {
+  id           String            @id @default(uuid()) @db.Uuid
+  patientId    String            @db.Uuid
+  selector     String            @unique
+  tokenHash    String
+  expiresAt    DateTime
+  createdAt    DateTime          @default(now())
+
+  patient      PatientProfile    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
