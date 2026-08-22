@@ -1,4 +1,4 @@
-﻿import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import { app } from "../src/app.js";
 import { databaseClient } from "../src/config/database.js";
@@ -9,21 +9,18 @@ const prisma = databaseClient.getClient();
 describe("Organization & Tenant Security", () => {
   let docA: { id: string; accessToken: string };
   let docB: { id: string; accessToken: string };
-  let hospA: any;
-  let hospB: any;
-  let deptA: any;
+  let hospA: unknown;
+  let hospB: unknown;
+  let deptA: unknown;
 
   beforeAll(async () => {
-    await prisma.encounter.deleteMany();
-    await prisma.hospitalMembership.deleteMany();
-    await prisma.department.deleteMany();
-    await prisma.hospital.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "orgtest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "orgtest" } } } });
-    await prisma.doctorProfile.deleteMany({ where: { user: { email: { contains: "orgtest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "orgtest" } } });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
 
+    
+    
+    
+    
+    
     const resA = await request(app).post("/api/auth/register").send({
       email: "docA@orgtest.com", password: "securepassword123", firstName: "Doc", lastName: "A"
     });
@@ -54,16 +51,14 @@ describe("Organization & Tenant Security", () => {
   });
 
   afterAll(async () => {
-    await prisma.encounter.deleteMany();
-    await prisma.hospitalMembership.deleteMany();
-    await prisma.department.deleteMany();
-    await prisma.hospital.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "orgtest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "orgtest" } } } });
-    await prisma.doctorProfile.deleteMany({ where: { user: { email: { contains: "orgtest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "orgtest" } } });
-  });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
+    
+    
+    
+    
+    
+    });
 
   it("1. Hospital Admin A cannot view Hospital B members", async () => {
     const res = await request(app).get(`/api/hospitals/${hospA.id}/members`).set("Authorization", `Bearer ${docB.accessToken}`);

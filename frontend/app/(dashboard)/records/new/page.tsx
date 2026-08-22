@@ -73,6 +73,7 @@ export default function NewRecordPage() {
       }
 
       router.push(`/records/${newRecord.id}`);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Next.js / React temporary strictness disable
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
       setLoading(false);

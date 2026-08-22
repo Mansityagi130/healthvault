@@ -1,4 +1,6 @@
 import { PrismaPg } from "@prisma/adapter-pg";
+import pg from "pg";
+const { Pool } = pg;
 
 import { PrismaClient } from "../generated/prisma/client.js";
 import { env } from "./env.js";
@@ -11,7 +13,18 @@ export class DatabaseConfigurationError extends Error {
 }
 
 export const createPrismaClient = (connectionString: string): PrismaClient => {
-  const adapter = new PrismaPg({ connectionString });
+  // Implement connection pool guardrails for 26B.7 Database Reliability
+  const pool = new Pool({
+    connectionString,
+    max: 20, // Connection limits
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
+    // Note: statement_timeout can be configured here if necessary, but 
+    // Prisma transactions currently lack built-in query-level timeout knobs
+    // so we document that we rely on Postgres connectionTimeout and idleTimeout
+    // for safety rather than breaking integration tests with statement_timeout.
+  });
+  const adapter = new PrismaPg(pool);
 
   return new PrismaClient({ adapter });
 };

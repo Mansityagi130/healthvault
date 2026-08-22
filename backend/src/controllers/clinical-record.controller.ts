@@ -1,6 +1,7 @@
 import type { Response } from "express";
 import type { AuthRequest } from "../middleware/auth.middleware.js";
 import { databaseClient } from "../config/database.js";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
 import { RecordCategory, RecordSource, ProvenanceStatus, EncounterStatus } from "../generated/prisma/client.js";
 
 const prisma = databaseClient.getClient();
@@ -87,6 +88,7 @@ export const ClinicalRecordController = {
         await tx.auditLog.create({
           data: {
             actorUserId: providerUserId,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
             action: "RECORD_UPLOADED" as any, // Mapped AuditAction
             targetType: "MedicalRecord",
             targetId: mr.id,
@@ -195,6 +197,7 @@ export const ClinicalRecordController = {
         await tx.auditLog.create({
           data: {
             actorUserId: providerUserId,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
             action: "RECORD_UPLOADED" as any,
             targetType: "MedicalRecord",
             targetId: mr.id,

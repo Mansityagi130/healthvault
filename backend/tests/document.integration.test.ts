@@ -5,6 +5,8 @@ import { databaseClient } from "../src/config/database.js";
 import { RecordCategory } from "../src/generated/prisma/enums.js";
 import fs from "fs/promises";
 import path from "path";
+import { pollOutbox } from "../src/jobs/outbox-poller.js";
+import { processAllMockJobs } from "../src/jobs/queue.js";
 
 const prisma = databaseClient.getClient();
 
@@ -15,51 +17,37 @@ describe("Document Upload & Security", () => {
   let documentA_id: string;
 
   beforeAll(async () => {
-    // Clean up
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.medicalDocument.deleteMany();
-    await prisma.medicalRecord.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "doctest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "doctest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "doctest" } } });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab", "OutboxEvent" CASCADE;`);
 
-    // Register User A
-    const resA = await request(app).post("/api/auth/register")
-      .set("X-Forwarded-For", "192.168.20.1")
-      .send({
-        email: "doctestA@example.com",
-        password: "securepassword123",
-        firstName: "DocUser",
-        lastName: "A"
-      });
-    const loginA = await request(app).post("/api/auth/login")
-      .set("X-Forwarded-For", "192.168.20.1")
-      .send({
-        email: "doctestA@example.com",
-        password: "securepassword123",
-      });
-    userA = { id: resA.body.user.id, accessToken: loginA.body.accessToken };
+    // Setup Patient A
+    const resRegA = await request(app).post("/api/auth/register").send({
+      email: `patientA-${Date.now()}@example.com`,
+      password: "Password123!",
+      firstName: "Patient",
+      lastName: "A",
+      role: "PATIENT"
+    });
+    const resA = await request(app).post("/api/auth/login").send({
+      email: resRegA.body.user.email,
+      password: "Password123!"
+    });
+    userA = { id: resA.body.user.id, accessToken: resA.body.accessToken };
 
-    // Register User B
-    const resB = await request(app).post("/api/auth/register")
-      .set("X-Forwarded-For", "192.168.20.2")
-      .send({
-        email: "doctestB@example.com",
-        password: "securepassword123",
-        firstName: "DocUser",
-        lastName: "B"
-      });
-    const loginB = await request(app).post("/api/auth/login")
-      .set("X-Forwarded-For", "192.168.20.2")
-      .send({
-        email: "doctestB@example.com",
-        password: "securepassword123",
-      });
-    userB = { id: resB.body.user.id, accessToken: loginB.body.accessToken };
+    // Setup Patient B
+    const resRegB = await request(app).post("/api/auth/register").send({
+      email: `patientB-${Date.now()}@example.com`,
+      password: "Password123!",
+      firstName: "Patient",
+      lastName: "B",
+      role: "PATIENT"
+    });
+    const resB = await request(app).post("/api/auth/login").send({
+      email: resRegB.body.user.email,
+      password: "Password123!"
+    });
+    userB = { id: resB.body.user.id, accessToken: resB.body.accessToken };
 
-    // Create a record for User A
+    // Create a record for A
     const recRes = await request(app)
       .post("/api/patient/records")
       .set("Authorization", `Bearer ${userA.accessToken}`)
@@ -72,20 +60,14 @@ describe("Document Upload & Security", () => {
   });
 
   afterAll(async () => {
-    // Cleanup DB
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.medicalDocument.deleteMany();
-    await prisma.medicalRecord.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "doctest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "doctest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "doctest" } } });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab", "OutboxEvent" CASCADE;`);
 
+    // Cleanup DB
     // Cleanup storage files if any
     try {
       await fs.rm(path.join(process.cwd(), "storage/patients"), { recursive: true, force: true });
-    } catch (e) {}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
+    } catch (e) { /* ignore */ }
   });
 
   it("1. Patient can upload a valid document to own record", async () => {
@@ -104,6 +86,10 @@ describe("Document Upload & Security", () => {
     expect(res.body.mimeType).toBe("application/pdf");
     expect(res.body.originalFilename).toBe("test.pdf");
     documentA_id = res.body.id;
+
+    // Process the background job to promote the document to CLEAN
+    await pollOutbox();
+    await processAllMockJobs();
   });
 
   it("2. Patient cannot upload to another patient's record", async () => {

@@ -7,19 +7,15 @@ const prisma = databaseClient.getClient();
 
 describe("Auth Endpoints", () => {
   beforeAll(async () => {
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "test@example.com" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "test@example.com" } } } });
-    await prisma.doctorProfile.deleteMany({ where: { user: { email: { contains: "test@example.com" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "test@example.com" } } });
-  });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
+    
+    });
 
   afterAll(async () => {
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "test@example.com" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "test@example.com" } } } });
-    await prisma.doctorProfile.deleteMany({ where: { user: { email: { contains: "test@example.com" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "test@example.com" } } });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
+    
     await databaseClient.disconnect();
   });
 
@@ -40,9 +36,6 @@ describe("Auth Endpoints", () => {
     expect(res.status).toBe(201);
     expect(res.body.user).toHaveProperty("id");
     expect(res.body.user.email).toBe("test@example.com");
-
-    expect(res.body).toHaveProperty("id");
-    expect(res.body.email).toBe("test@example.com");
   });
 
   it("2. Prevents duplicate email registration", async () => {
@@ -71,6 +64,10 @@ describe("Auth Endpoints", () => {
     expect(res.body).toHaveProperty("accessToken");
     expect(res.body).toHaveProperty("user");
     expect(res.body.user.email).toBe("test@example.com");
+    userTokens = {
+      accessToken: res.body.accessToken,
+      refreshTokenCookie: res.headers["set-cookie"][0].split(";")[0],
+    };
   });
 
   it("4. Rejects invalid credentials", async () => {

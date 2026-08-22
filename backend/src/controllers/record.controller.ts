@@ -21,6 +21,7 @@ export const RecordController = {
       res.status(200).json(result);
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "ZodError") {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
         res.status(400).json({ error: "Validation error", details: (error as any).errors });
       } else {
         res.status(500).json({ error: "Failed to fetch records" });
@@ -59,6 +60,7 @@ export const RecordController = {
       res.status(201).json(record);
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "ZodError") {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
         res.status(400).json({ error: "Validation error", details: (error as any).errors });
       } else {
         res.status(500).json({ error: "Failed to create record" });
@@ -82,6 +84,7 @@ export const RecordController = {
       res.status(200).json(record);
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "ZodError") {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
         res.status(400).json({ error: "Validation error", details: (error as any).errors });
       } else if (error instanceof Error && error.message === "Record not found") {
         res.status(404).json({ error: "Record not found" });

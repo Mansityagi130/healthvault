@@ -86,6 +86,13 @@ enum RecordLifecycleStatus {
   REVOKED
 }
 
+enum DocumentSecurityStatus {
+  PENDING_SCAN
+  CLEAN
+  INFECTED
+  SCAN_FAILED
+}
+
 enum DocumentVerificationStatus {
   UNVERIFIED
   VERIFIED
@@ -191,6 +198,20 @@ enum AuditAction {
   LAB_ASSOCIATION_APPROVED
   LAB_ASSOCIATION_REVOKED
   LAB_ASSOCIATION_EXPIRED
+  DOCUMENT_UPLOADED
+  SCAN_COMPLETED
+  DOCUMENT_INFECTED
+  SCAN_FAILED
+  DOCUMENT_APPROVED
+  MFA_ENROLLMENT_STARTED
+  MFA_ENABLED
+  MFA_DISABLED
+  MFA_VERIFICATION_FAILED
+  RECOVERY_CODES_GENERATED
+  RECOVERY_CODE_USED
+  PASSWORD_RESET_REQUESTED
+  PASSWORD_RESET_COMPLETED
+  PASSWORD_CHANGED
 }
 
 enum NotificationType {
@@ -231,6 +252,10 @@ model User {
   phone               String?              @unique
   passwordHash        String?
   status              AccountStatus        @default(ACTIVE)
+  mfaEnabled          Boolean              @default(false)
+  mfaSecret           String?
+  mfaBackupCodes      String[]
+  mfaSecretPending    String?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
   patientProfile      PatientProfile?
@@ -250,32 +275,47 @@ model User {
   externalIdentities  ExternalIdentity[]
   authSessions        AuthSession[]
   encounters          Encounter[]          @relation("EncounterProvider")
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @db.Uuid
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tokenHash])
 }
 
 model PatientProfile {
-  id                String                  @id @default(uuid()) @db.Uuid
-  publicId          String                  @unique @default(uuid()) @db.Uuid
-  userId            String                  @unique @db.Uuid
-  firstName         String?
-  lastName          String?
-  phone             String?
-  dateOfBirth       DateTime?
-  sexAtBirth        String?
-  preferredLanguage String?
-  profileImageRef   String?
-  createdAt         DateTime                @default(now())
-  updatedAt         DateTime                @updatedAt
-  user              User                    @relation(fields: [userId], references: [id], onDelete: Restrict)
-  medicalRecords    MedicalRecord[]
-  consentRequests   ConsentRequest[]
-  consents          Consent[]
-  sharingSessions   SharingSession[]
-  emergencyProfile  EmergencyProfile?
-  accessLogs        AccessLog[]
-  encounters        Encounter[]
-  labAssociations   PatientLabAssociation[]
-  labPairingTokens  LabPairingToken[]
-  registrationTokens RegistrationPairingToken[]
+  id                   String                        @id @default(uuid()) @db.Uuid
+  publicId             String                        @unique @default(uuid()) @db.Uuid
+  userId               String                        @unique @db.Uuid
+  firstName            String?
+  lastName             String?
+  phone                String?
+  dateOfBirth          DateTime?
+  sexAtBirth           String?
+  preferredLanguage    String?
+  profileImageRef      String?
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
+  user                 User                          @relation(fields: [userId], references: [id], onDelete: Restrict)
+  medicalRecords       MedicalRecord[]
+  consentRequests      ConsentRequest[]
+  consents             Consent[]
+  sharingSessions      SharingSession[]
+  emergencyProfile     EmergencyProfile?
+  accessLogs           AccessLog[]
+  encounters           Encounter[]
+  labAssociations      PatientLabAssociation[]
+  labPairingTokens     LabPairingToken[]
+  registrationTokens   RegistrationPairingToken[]
+  abdmConsents         AbdmConsent[]
+  externalTransactions ExternalExchangeTransaction[]
 }
 
 model DoctorProfile {
@@ -433,6 +473,9 @@ model MedicalDocument {
   mimeType           String
   byteSize           BigInt
   checksum           String
+  securityStatus     DocumentSecurityStatus     @default(PENDING_SCAN)
+  scanCompletedAt    DateTime?
+  scanResult         String?
   verificationStatus DocumentVerificationStatus @default(UNVERIFIED)
   uploadedByUserId   String?                    @db.Uuid
   uploadedAt         DateTime                   @default(now())
@@ -891,12 +934,68 @@ model LabPairingToken {
 }
 
 model RegistrationPairingToken {
-  id           String            @id @default(uuid()) @db.Uuid
-  patientId    String            @db.Uuid
-  selector     String            @unique
-  tokenHash    String
-  expiresAt    DateTime
-  createdAt    DateTime          @default(now())
+  id        String   @id @default(uuid()) @db.Uuid
+  patientId String   @db.Uuid
+  selector  String   @unique
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-  patient      PatientProfile    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+enum ExternalTransactionStatus {
+  REQUESTED
+  AUTHORIZING
+  AUTHORIZED
+  SUBMITTED
+  PROCESSING
+  COMPLETED
+  FAILED
+  EXPIRED
+  CANCELLED
+}
+
+model ExternalExchangeTransaction {
+  id            String                    @id @default(uuid()) @db.Uuid
+  type          String
+  status        ExternalTransactionStatus @default(REQUESTED)
+  correlationId String?                   @unique
+  payload       Json?
+  errorMessage  String?
+  patientId     String?                   @db.Uuid
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  patient PatientProfile? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+}
+
+model AbdmConsent {
+  id                String   @id @default(uuid()) @db.Uuid
+  artefactId        String   @unique
+  patientId         String   @db.Uuid
+  status            String
+  signature         String?
+  grantedCategories String[]
+  expiresAt         DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  patient PatientProfile @relation(fields: [patientId], references: [id], onDelete: Restrict)
+}
+
+model OutboxEvent {
+  id        String       @id @default(uuid()) @db.Uuid
+  topic     String
+  payload   Json
+  status    OutboxStatus @default(PENDING)
+  error     String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+enum OutboxStatus {
+  PENDING
+  PROCESSED
+  FAILED
 }

@@ -1,4 +1,0 @@
-const fs = require('fs');
-fs.writeFileSync('prisma/migrations/20260819194500_organization_uniques/migration.sql', 'CREATE UNIQUE INDEX IF NOT EXISTS "Department_code_key" ON "Department"("code");\nCREATE UNIQUE INDEX IF NOT EXISTS "Department_hospitalId_name_key" ON "Department"("hospitalId", "name");\nCREATE UNIQUE INDEX IF NOT EXISTS "Hospital_code_key" ON "Hospital"("code");\nCREATE UNIQUE INDEX IF NOT EXISTS "HospitalMembership_hospitalId_userId_departmentId_key" ON "HospitalMembership"("hospitalId", "userId", "departmentId");\n', 'utf8');
-
-fs.writeFileSync('prisma/migrations/20260819195000_audit_actions/migration.sql', 'ALTER TYPE "AuditAction" ADD VALUE IF NOT EXISTS \'MEMBERSHIP_UPDATED\';\nALTER TYPE "AuditAction" ADD VALUE IF NOT EXISTS \'MEMBERSHIP_ACTIVATED\';\nALTER TYPE "AuditAction" ADD VALUE IF NOT EXISTS \'MEMBERSHIP_DEACTIVATED\';\nALTER TYPE "AuditAction" ADD VALUE IF NOT EXISTS \'DEPARTMENT_ASSIGNED\';\n', 'utf8');

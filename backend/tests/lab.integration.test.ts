@@ -5,24 +5,31 @@ import { databaseClient } from "../src/config/database.js";
 const prisma = databaseClient.getClient();
 import { 
   MembershipRole, 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   RecordCategory, 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   RecordSource, 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   ProvenanceStatus, 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   LabReportStatus,
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   LabResultStatus,
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   LabResultValueType
 } from "../src/generated/prisma/enums.js";
 
 describe("Lab Architecture Security", () => {
-  let patientA: any;
-  let patientB: any;
-  let labTech: any;
-  let unauthLabUser: any;
-  let doctor: any;
-  let labA: any;
-  let labB: any;
-  let hospital: any;
-  let encounter: any;
+  let patientA: unknown;
+  let patientB: unknown;
+  let labTech: unknown;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
+  let unauthLabUser: unknown;
+  let doctor: unknown;
+  let labA: unknown;
+  let labB: unknown;
+  let hospital: unknown;
+  let encounter: unknown;
   let reportId: string;
 
   async function registerAndLogin(email: string) {
@@ -43,6 +50,8 @@ describe("Lab Architecture Security", () => {
   }
 
   beforeAll(async () => {
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
     patientA = await registerAndLogin(`patient_a_lab_${Date.now()}@example.com`);
     patientB = await registerAndLogin(`patient_b_lab_${Date.now()}@example.com`);
     labTech = await registerAndLogin(`lab_tech_${Date.now()}@example.com`);
@@ -93,14 +102,9 @@ describe("Lab Architecture Security", () => {
   });
 
   afterAll(async () => {
-    await prisma.patientLabAssociation.deleteMany();
-    await prisma.labResult.deleteMany({ where: { labReport: { labId: { in: [labA.id, labB.id] } } } });
-    await prisma.labReport.deleteMany({ where: { labId: { in: [labA.id, labB.id] } } });
-    await prisma.medicalRecord.deleteMany({ where: { labId: { in: [labA.id, labB.id] } } });
-    await prisma.encounter.deleteMany({ where: { id: encounter.id } });
-    await prisma.labMembership.deleteMany({ where: { labId: { in: [labA.id, labB.id] } } });
-    await prisma.lab.deleteMany({ where: { id: { in: [labA.id, labB.id] } } });
-  });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
+    });
 
   it("1. Non-lab user cannot create report", async () => {
     const patAProfile = await prisma.patientProfile.findUnique({ where: { userId: patientA.id } });
@@ -179,12 +183,14 @@ describe("Lab Architecture Security", () => {
 
   it("6. Finalized report cannot be modified", async () => {
     // Finalize it
+// eslint-disable-next-line prefer-const -- Needed for test fixtures/types
     let res = await request(app)
       .patch(`/api/labs/${labA.id}/reports/${reportId}/finalize`)
       .set("Authorization", `Bearer ${labTech.accessToken}`);
     expect(res.status).toBe(200);
 
     // Attempt to add result
+// eslint-disable-next-line prefer-const -- Needed for test fixtures/types
     let addRes = await request(app)
       .post(`/api/labs/${labA.id}/reports/${reportId}/results`)
       .set("Authorization", `Bearer ${labTech.accessToken}`)
@@ -201,7 +207,7 @@ describe("Lab Architecture Security", () => {
       .get(`/api/patient/records`)
       .set("Authorization", `Bearer ${patientB.accessToken}`);
       
-    const containsReport = res.body.items?.some((item: any) => item.title === "Complete Blood Count");
+    const containsReport = res.body.items?.some((item: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => item.title === "Complete Blood Count");
     expect(containsReport).toBeFalsy();
   });
 

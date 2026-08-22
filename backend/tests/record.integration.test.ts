@@ -12,15 +12,9 @@ describe("Medical Record Security", () => {
   let recordA_id: string;
 
   beforeAll(async () => {
-    // Clean up
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.medicalRecord.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "recordtest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "recordtest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "recordtest" } } });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
 
+    // Clean up
     // Register User A
     const resA = await request(app).post("/api/auth/register")
       .set("X-Forwarded-For", "192.168.10.1")
@@ -57,14 +51,9 @@ describe("Medical Record Security", () => {
   });
 
   afterAll(async () => {
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.medicalRecord.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "recordtest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "recordtest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "recordtest" } } });
-  });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
+    });
 
   it("10. Record creation creates correct ownership (User A)", async () => {
     const res = await request(app)

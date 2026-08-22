@@ -19,6 +19,7 @@ export class LocalStorageProvider implements StorageProvider {
     return resolvedPath;
   }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   async upload(key: string, buffer: Buffer, mimeType: string): Promise<string> {
     const filePath = this.getFilePath(key);
     await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -48,12 +49,27 @@ export class LocalStorageProvider implements StorageProvider {
     }
   }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   async createSignedAccessUrl(key: string, expiresInSeconds: number = 3600): Promise<string> {
     // Local provider doesn't support real signed URLs easily without a backend route.
     // The backend route itself will serve the file and authorize it.
     // For this prototype, we'll just return a dummy or relative path that the frontend uses 
     // to call the secure backend GET endpoint instead of a direct storage URL.
     return `/api/patient/documents/${key}`; 
+  }
+
+  async moveToNamespace(oldKey: string, newNamespace: string): Promise<string> {
+    const oldFilePath = this.getFilePath(oldKey);
+    // newKey replaces the first segment (e.g., 'quarantine') with newNamespace
+    const segments = oldKey.split("/");
+    segments[0] = newNamespace;
+    const newKey = segments.join("/");
+    
+    const newFilePath = this.getFilePath(newKey);
+    await fs.mkdir(path.dirname(newFilePath), { recursive: true });
+    await fs.rename(oldFilePath, newFilePath);
+    
+    return newKey;
   }
 }
 

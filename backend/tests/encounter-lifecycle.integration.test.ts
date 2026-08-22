@@ -5,16 +5,17 @@ import { databaseClient } from "../src/config/database.js";
 const prisma = databaseClient.getClient();
 
 describe("Hospital Clinical Workflow Integration (Step 21B)", () => {
-  let patient: any;
-  let provider: any;
-  let hospitalStaff: any;
-  let otherHospitalStaff: any;
-  let hospitalA: any;
-  let hospitalB: any;
+  let patient: unknown;
+  let provider: unknown;
+  let hospitalStaff: unknown;
+  let otherHospitalStaff: unknown;
+  let hospitalA: unknown;
+  let hospitalB: unknown;
   let encounterId: string;
-  let pairingToken: any;
+  let pairingToken: unknown;
 
   async function registerAndLogin(email: string) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     const res = await request(app).post("/api/auth/register").send({
       email,
       password: "password123",
@@ -35,6 +36,8 @@ describe("Hospital Clinical Workflow Integration (Step 21B)", () => {
   }
 
   beforeAll(async () => {
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
     patient = await registerAndLogin(`patient_enc_${Date.now()}@example.com`);
     const prof = await prisma.patientProfile.findUnique({ where: { userId: patient.id } });
     if (prof) patient.profileId = prof.id;
@@ -65,15 +68,13 @@ describe("Hospital Clinical Workflow Integration (Step 21B)", () => {
   });
 
   afterAll(async () => {
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     const hospIds = [hospitalA?.id, hospitalB?.id].filter(Boolean) as string[];
-    await prisma.consultation.deleteMany();
-    await prisma.prescription.deleteMany();
-    await prisma.medicalRecord.deleteMany({ where: { hospitalId: { in: hospIds } } });
-    await prisma.encounter.deleteMany({ where: { hospitalId: { in: hospIds } } });
-    await prisma.registrationPairingToken.deleteMany({ where: { patientId: patient?.profileId } });
-    await prisma.hospitalMembership.deleteMany({ where: { hospitalId: { in: hospIds } } });
-    await prisma.hospital.deleteMany({ where: { id: { in: hospIds } } });
-  });
+    
+    
+    });
 
   it("1. Patient creates registration token", async () => {
     const res = await request(app)

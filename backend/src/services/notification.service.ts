@@ -27,13 +27,24 @@ export class NotificationService {
       relatedResource: dto.relatedResource,
     };
 
-    return prisma.notification.create({
-      data: {
-        userId: dto.userId,
-        type: dto.type,
-        status: NotificationStatus.PENDING,
-        payload,
-      },
+    return prisma.$transaction(async (txn) => {
+      const notification = await txn.notification.create({
+        data: {
+          userId: dto.userId,
+          type: dto.type,
+          status: NotificationStatus.PENDING,
+          payload,
+        },
+      });
+
+      await txn.outboxEvent.create({
+        data: {
+          topic: 'NOTIFICATION',
+          payload: { notificationId: notification.id }
+        }
+      });
+
+      return notification;
     });
   }
 

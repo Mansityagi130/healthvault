@@ -11,3 +11,12 @@ uploads/
 .DS_Store
 Thumbs.db
 backend/src/generated/prisma/
+storage/
+backend/storage/
+*.tsbuildinfo
+backend/temp.sql
+backend/test_output.log
+backend/backend-server.log
+backend/backend-server-error.log
+frontend/frontend-server.log
+frontend/frontend-server-error.log

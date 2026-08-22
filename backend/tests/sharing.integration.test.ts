@@ -14,28 +14,9 @@ describe("Sharing & Consent Security", () => {
   let sharingSessionId: string;
 
   beforeAll(async () => {
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
     // Cleanup DB to avoid unique constraint issues with fixtures
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.qRSession.deleteMany();
-    await prisma.sharingSessionScope.deleteMany();
-    await prisma.sharingSession.deleteMany();
-    await prisma.consentScope.deleteMany();
-    await prisma.consent.deleteMany();
-    await prisma.medicalDocument.deleteMany();
-    await prisma.medicalRecord.deleteMany();
-    await prisma.medicalDocument.deleteMany();
-    await prisma.medicalRecord.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "test" } } } });
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "share" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "share" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "test" } } } });
-    await prisma.doctorProfile.deleteMany({ where: { user: { email: { contains: "test" } } } });
-    await prisma.hospitalMembership.deleteMany(); await prisma.user.deleteMany({ where: { email: { contains: "share" } } });
-    await prisma.hospitalMembership.deleteMany(); await prisma.user.deleteMany({ where: { email: { contains: "test" } } });
-    
     // Create patient
     const resPat = await request(app).post("/api/auth/register").set("X-Forwarded-For", "192.168.20.10").send({
       email: "patient.share@example.com",
@@ -51,6 +32,7 @@ describe("Sharing & Consent Security", () => {
 
     // Use fixture provider generation to get doctors
     const provRes = await request(app).get("/api/patient/providers/fixtures").set("Authorization", `Bearer ${patient.accessToken}`);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     const providers = provRes.body;
     
     // Create actual sessions for the providers so they can call authenticated routes
@@ -60,26 +42,10 @@ describe("Sharing & Consent Security", () => {
   });
 
   afterAll(async () => {
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
     // Cleanup
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.qRSession.deleteMany();
-    await prisma.sharingSessionScope.deleteMany();
-    await prisma.sharingSession.deleteMany();
-    await prisma.consentScope.deleteMany();
-    await prisma.consent.deleteMany();
-    await prisma.medicalDocument.deleteMany();
-    await prisma.medicalRecord.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "test" } } } });
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "share" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "share" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "test" } } } });
-    await prisma.doctorProfile.deleteMany({ where: { user: { email: { contains: "test" } } } });
-    await prisma.hospitalMembership.deleteMany(); await prisma.user.deleteMany({ where: { email: { contains: "share" } } });
-    await prisma.hospitalMembership.deleteMany(); await prisma.user.deleteMany({ where: { email: { contains: "test" } } });
-  });
+    });
 
   it("0. Setup providers via API for test tokens", async () => {
     // Create Provider A

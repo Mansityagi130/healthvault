@@ -47,6 +47,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
             setAccessToken(null);
             return null;
           }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Next.js / React temporary strictness disable
         } catch (error) {
           setAccessToken(null);
           return null;

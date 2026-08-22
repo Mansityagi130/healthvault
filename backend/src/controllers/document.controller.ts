@@ -20,6 +20,7 @@ export const DocumentController = {
 
       const document = await DocumentService.uploadDocument(userId, recordId, req.file);
       res.status(201).json(document);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       if (
         error.message === "Record not found" || 
@@ -54,14 +55,19 @@ export const DocumentController = {
       res.setHeader("Content-Type", metadata.mimeType);
       res.setHeader("Content-Disposition", `inline; filename="${metadata.originalFilename}"`);
       res.setHeader("Content-Length", buffer.length);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Content-Security-Policy", "default-src 'none'");
       
       res.status(200).send(buffer);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       if (
         error.message === "Document not found" || 
         error.message === "Profile not found"
       ) {
         res.status(404).json({ error: "Document not found" });
+      } else if (error.message === "Document unavailable due to security status") {
+        res.status(403).json({ error: "Document is unavailable due to its security status" });
       } else {
         console.error("Download Error:", error);
         res.status(500).json({ error: "Failed to download document" });

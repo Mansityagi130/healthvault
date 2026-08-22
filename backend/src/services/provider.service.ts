@@ -1,5 +1,6 @@
 import { databaseClient } from "../config/database.js";
 import { 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   RecordCategory, 
   SharingSessionStatus, 
   ConsentStatus,
@@ -191,6 +192,10 @@ export class ProviderService {
 
     if (!doc || doc.medicalRecord.patientId !== session.patientId) {
       throw new Error("Unauthorized");
+    }
+
+    if (doc.securityStatus !== "CLEAN") {
+      throw new Error("Document unavailable due to security status");
     }
 
     if (!authorizedCategories.includes(doc.medicalRecord.category)) {

@@ -37,6 +37,12 @@ export default function LoginPage() {
       }
 
       const data = await res.json();
+      if (data.mfaRequired) {
+        sessionStorage.setItem("pendingMfaToken", data.mfaToken);
+        router.push("/login/mfa");
+        return;
+      }
+
       setAccessToken(data.accessToken);
       
       const roles = data.user?.roles || [];
@@ -82,9 +88,14 @@ export default function LoginPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">
-            Password
-          </label>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-sm font-medium text-slate-700">
+              Password
+            </label>
+            <Link href="/forgot-password" className="text-xs font-medium text-teal-700 hover:text-teal-800">
+              Forgot password?
+            </Link>
+          </div>
           <div className="relative">
             <input
               type={showPassword ? "text" : "password"}

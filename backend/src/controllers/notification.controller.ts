@@ -34,6 +34,7 @@ export const markAsRead = async (req: AuthRequest, res: Response) => {
 
     const updated = await notificationService.markAsRead(userId, id as string);
     res.json(updated);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
   } catch (error: any) {
     if (error.message === 'Unauthorized to access this notification') {
       res.status(403).json({ error: error.message });

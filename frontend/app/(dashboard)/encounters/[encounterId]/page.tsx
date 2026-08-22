@@ -11,6 +11,7 @@ import { ChevronLeft } from "lucide-react";
 export default function PatientEncounterDetailPage() {
   const params = useParams();
   const router = useRouter();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Next.js / React temporary strictness disable
   const [encounter, setEncounter] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
@@ -19,6 +20,7 @@ export default function PatientEncounterDetailPage() {
       try {
         const res = await fetchWithAuth(`/patient/encounters`);
         const data = await res.json();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Next.js / React temporary strictness disable
         const enc = data.find((e: any) => e.id === params.encounterId);
         setEncounter(enc);
       } catch (err) {

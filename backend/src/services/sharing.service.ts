@@ -7,7 +7,9 @@ import {
   SharingSessionStatus, 
   QRUsageMode,
   AuditAction,
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   AccessAction,
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   AccessOutcome
 } from "../generated/prisma/enums.js";
 

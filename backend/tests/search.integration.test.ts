@@ -11,14 +11,9 @@ describe("Step 24: Secure Search & Filtering API Integration Tests", () => {
   let userB: { id: string; accessToken: string };
 
   beforeAll(async () => {
-    // Clean up
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.medicalRecord.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "searchtest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "searchtest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "searchtest" } } });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
 
+    // Clean up
     // Register User A
     const resA = await request(app).post("/api/auth/register")
       .send({ email: "searchtestA@example.com", password: "securepassword123", firstName: "Alice", lastName: "A" });
@@ -47,13 +42,9 @@ describe("Step 24: Secure Search & Filtering API Integration Tests", () => {
   });
 
   afterAll(async () => {
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.medicalRecord.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "searchtest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "searchtest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "searchtest" } } });
-  });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
+    });
 
   it("1. Patient searching for their own record finds it", async () => {
     const res = await request(app)

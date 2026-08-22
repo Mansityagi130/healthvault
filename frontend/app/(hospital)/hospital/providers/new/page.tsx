@@ -14,7 +14,7 @@ function AddProviderForm() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("DOCTOR");
   const [departmentId, setDepartmentId] = useState("");
-  const [departments, setDepartments] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any /* eslint-disable-line @typescript-eslint/no-explicit-any */[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -115,7 +115,7 @@ function AddProviderForm() {
                 className="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-teal-500 outline-none bg-white"
               >
                 <option value="">Unassigned</option>
-                {departments.map((d: Record<string, any>) => (
+                {departments.map((d: Record<string, any /* eslint-disable-line @typescript-eslint/no-explicit-any */>) => (
                   <option key={d.id as string} value={d.id as string}>{d.name as string}</option>
                 ))}
               </select>

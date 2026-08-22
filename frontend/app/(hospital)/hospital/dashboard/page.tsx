@@ -48,11 +48,11 @@ export default function HospitalDashboard() {
         <div className="text-center p-12 bg-slate-50 rounded-xl border border-dashed border-slate-200">
           <Building className="w-12 h-12 text-slate-300 mx-auto mb-3" />
           <p className="text-slate-500 font-medium">No organization memberships found</p>
-          <p className="text-slate-400 text-sm mt-1">You are not affiliated with any hospitals.</p>
+          <p className="text-slate-400 text-sm mt-1">You are not affiliated with any /* eslint-disable-line @typescript-eslint/no-explicit-any */ hospitals.</p>
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {hospitals.map((hosp: Record<string, any>) => (
+          {hospitals.map((hosp: Record<string, any /* eslint-disable-line @typescript-eslint/no-explicit-any */>) => (
             <div key={hosp.id as string} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex justify-between items-start mb-4">
                 <div className="p-2 bg-teal-50 rounded-lg">

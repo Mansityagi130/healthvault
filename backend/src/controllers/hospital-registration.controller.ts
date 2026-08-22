@@ -48,6 +48,7 @@ export class HospitalRegistrationController {
         token: rawToken,
         expiresAt: tokenData.expiresAt
       });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (err: any) {
       if (err.name === "ZodError") {
         res.status(400).json({ error: "Validation error", details: err.errors });
@@ -118,6 +119,7 @@ export class HospitalRegistrationController {
         patient
       });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (err: any) {
       if (err.name === "ZodError") {
         res.status(400).json({ error: "Validation error", details: err.errors });

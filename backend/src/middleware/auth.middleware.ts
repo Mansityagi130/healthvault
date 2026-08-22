@@ -33,7 +33,39 @@ export const authenticate = async (req: AuthRequest, res: Response, next: NextFu
       sessionId: decoded.sessionId,
     };
     next();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   } catch (_error: unknown) {
     res.status(401).json({ error: "Unauthorized" });
+  }
+};
+
+export interface StepUpRequest extends AuthRequest {
+  stepUp?: boolean;
+}
+
+export const requireStepUp = async (req: StepUpRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const stepUpHeader = req.headers["x-step-up-token"];
+    if (!stepUpHeader) {
+      res.status(403).json({ error: "Step-up authentication required" });
+      return;
+    }
+
+    const token = stepUpHeader as string;
+    const decoded = jwt.verify(token, env.JWT_ACCESS_SECRET, {
+      issuer: env.JWT_ISSUER,
+      audience: env.JWT_AUDIENCE,
+    }) as unknown as { sub: string; sessionId: string; type: string };
+
+    if (decoded.type !== "step-up" || decoded.sub !== req.user?.id || decoded.sessionId !== req.user?.sessionId) {
+      res.status(403).json({ error: "Invalid step-up token" });
+      return;
+    }
+
+    req.stepUp = true;
+    next();
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
+  } catch (_error: unknown) {
+    res.status(403).json({ error: "Step-up authentication required or expired" });
   }
 };

@@ -7,19 +7,20 @@ import { EncounterStatus } from "../src/generated/prisma/client.js";
 const prisma = databaseClient.getClient();
 
 describe("Provider-Created Clinical Records", () => {
-  let providerA: any;
-  let providerB: any;
-  let patientA: any;
-  let patientB: any;
-  let hospitalA: any;
-  let encounterA: any; // Assigned to providerA
-  let encounterB: any; // Completed encounter
+  let providerA: unknown;
+  let providerB: unknown;
+  let patientA: unknown;
+  let patientB: unknown;
+  let hospitalA: unknown;
+  let encounterA: unknown; // Assigned to providerA
+  let encounterB: unknown; // Completed encounter
 
   const timePrefix = Date.now();
   let ipCounter = 200;
 
   async function createPatient(email: string) {
     const ip = `10.10.0.${ipCounter++}`;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     const res = await request(app).post("/api/auth/register").set("X-Forwarded-For", ip).send({
       email, password: "password123", firstName: "Pat", lastName: "ient"
     });
@@ -184,7 +185,7 @@ describe("Provider-Created Clinical Records", () => {
     expect(res.status).toBe(200);
     // Should contain the consultation and prescription created by Provider A
     const items = res.body.items || res.body;
-    expect(items.some((r: any) => r.category === "CONSULTATION" && r.provenanceStatus === "PROVIDER_CREATED")).toBe(true);
+    expect(items.some((r: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => r.category === "CONSULTATION" && r.provenanceStatus === "PROVIDER_CREATED")).toBe(true);
   });
 
   it("7. Patient B cannot view Patient A records", async () => {

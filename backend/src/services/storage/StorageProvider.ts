@@ -23,4 +23,9 @@ export interface StorageProvider {
    * Create a signed URL for secure access (if supported by provider)
    */
   createSignedAccessUrl(key: string, expiresInSeconds?: number): Promise<string>;
+
+  /**
+   * Move a file to a new namespace (e.g., quarantine to approved)
+   */
+  moveToNamespace?(oldKey: string, newNamespace: string): Promise<string>;
 }

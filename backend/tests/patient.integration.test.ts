@@ -10,11 +10,9 @@ describe("Patient Profile Security", () => {
   let userB: { id: string; accessToken: string };
 
   beforeAll(async () => {
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "patienttest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "patienttest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "patienttest" } } });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
 
+    
     // Register User A
     const resA = await request(app).post("/api/auth/register")
       .set("X-Forwarded-For", "192.168.2.1")
@@ -53,11 +51,10 @@ describe("Patient Profile Security", () => {
   });
 
   afterAll(async () => {
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "patienttest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "patienttest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "patienttest" } } });
-  });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
+    
+    });
 
   it("1. Authenticated patient can retrieve own profile", async () => {
     const res = await request(app)

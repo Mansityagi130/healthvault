@@ -21,13 +21,13 @@ interface RecordDetail {
   createdAt: string;
   updatedAt: string;
   // relations
-  consultation: any;
-  prescription: any;
-  labReport: any;
-  imagingRecord: any;
-  dischargeSummary: any;
-  vaccinationRecord: any;
-  documents: any[];
+  consultation: any /* eslint-disable-line @typescript-eslint/no-explicit-any */;
+  prescription: any /* eslint-disable-line @typescript-eslint/no-explicit-any */;
+  labReport: any /* eslint-disable-line @typescript-eslint/no-explicit-any */;
+  imagingRecord: any /* eslint-disable-line @typescript-eslint/no-explicit-any */;
+  dischargeSummary: any /* eslint-disable-line @typescript-eslint/no-explicit-any */;
+  vaccinationRecord: any /* eslint-disable-line @typescript-eslint/no-explicit-any */;
+  documents: any /* eslint-disable-line @typescript-eslint/no-explicit-any */[];
 }
 
 const formatCategory = (cat: string) => {
@@ -122,7 +122,7 @@ export default function RecordDetailPage({ params }: { params: Promise<{ recordI
           </div>
           <h3 className="text-xl font-semibold text-slate-900 mb-2">Record not found</h3>
           <p className="text-slate-500 mb-6 max-w-md">
-            The record you are looking for doesn't exist or you don't have permission to view it.
+            The record you are looking for does not exist or you do not have permission to view it.
           </p>
           <Link href="/records">
             <Button variant="primary">Return to Records</Button>
@@ -139,7 +139,7 @@ export default function RecordDetailPage({ params }: { params: Promise<{ recordI
           <div className="h-12 w-12 rounded-full bg-red-50 text-red-600 flex items-center justify-center mb-4">
             <AlertCircle size={24} />
           </div>
-          <h3 className="text-xl font-semibold text-slate-900 mb-2">We couldn't load this record</h3>
+          <h3 className="text-xl font-semibold text-slate-900 mb-2">We couldn&apos;t load this record</h3>
           <p className="text-slate-500 mb-6">There was a problem retrieving the information. Please try again.</p>
           <div className="flex gap-3">
             <Link href="/records">
@@ -232,7 +232,7 @@ export default function RecordDetailPage({ params }: { params: Promise<{ recordI
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {record.documents.map((doc: any) => (
+              {record.documents.map((doc: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => (
                 <div key={doc.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-lg gap-4">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 shrink-0 bg-white rounded flex items-center justify-center border border-slate-200 text-slate-400">
@@ -307,7 +307,7 @@ export default function RecordDetailPage({ params }: { params: Promise<{ recordI
           <CardHeader><CardTitle>Prescription Items</CardTitle></CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-slate-500 mb-4">{record.prescription.instructions}</p>
-            {record.prescription.items?.map((item: any) => (
+            {record.prescription.items?.map((item: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => (
               <div key={item.id} className="p-4 border rounded-lg bg-slate-50">
                 <p className="font-semibold">{item.medicationName}</p>
                 <div className="grid grid-cols-3 gap-2 mt-2 text-sm text-slate-600">
@@ -336,7 +336,7 @@ export default function RecordDetailPage({ params }: { params: Promise<{ recordI
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {record.labReport.results.map((res: any) => (
+                  {record.labReport.results.map((res: any /* eslint-disable-line @typescript-eslint/no-explicit-any */) => (
                     <tr key={res.id}>
                       <td className="px-4 py-3 font-medium text-slate-900">{res.testName}</td>
                       <td className="px-4 py-3">

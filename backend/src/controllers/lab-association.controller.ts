@@ -77,6 +77,7 @@ export const LabAssociationController = {
         token: rawToken,
         expiresAt: tokenData.expiresAt
       });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       if (error.name === "ZodError") {
         res.status(400).json({ error: "Validation error", details: error.errors });
@@ -111,6 +112,7 @@ export const LabAssociationController = {
       });
 
       res.status(200).json({ items: associations });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -189,6 +191,7 @@ export const LabAssociationController = {
       });
 
       res.status(200).json(association);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       if (error.name === "ZodError") {
         res.status(400).json({ error: "Validation error", details: error.errors });
@@ -261,6 +264,7 @@ export const LabAssociationController = {
       });
 
       res.status(200).json(association);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       if (error.name === "ZodError") {
         res.status(400).json({ error: "Validation error", details: error.errors });
@@ -371,6 +375,7 @@ export const LabAssociationController = {
         associationId: result.association.id,
         patient: result.patient
       });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       if (error.name === "ZodError") {
         res.status(400).json({ error: "Validation error", details: error.errors });
@@ -410,6 +415,7 @@ export const LabAssociationController = {
       });
 
       res.status(200).json({ items: associations });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       if (error.message.startsWith("Unauthorized")) {
         res.status(403).json({ error: error.message });

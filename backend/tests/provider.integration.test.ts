@@ -15,26 +15,9 @@ describe("Provider Authorization", () => {
   let recordId: string;
 
   beforeAll(async () => {
-    // Cleanup
-    await prisma.accessLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.auditLog.deleteMany({ where: { actorUserId: { not: undefined } } });
-    await prisma.medicalDocument.deleteMany();
-    await prisma.medicalRecord.deleteMany();
-    await prisma.qRSession.deleteMany();
-    await prisma.sharingSessionScope.deleteMany();
-    await prisma.sharingSession.deleteMany();
-    await prisma.consentScope.deleteMany();
-    await prisma.consent.deleteMany();
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "provtest" } } } });
-    await prisma.encounter.deleteMany();
-    await prisma.authSession.deleteMany({ where: { user: { email: { contains: "patprov" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "provtest" } } } });
-    await prisma.patientProfile.deleteMany({ where: { user: { email: { contains: "patprov" } } } });
-    await prisma.doctorProfile.deleteMany({ where: { user: { email: { contains: "provtest" } } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "provtest" } } });
-    await prisma.user.deleteMany({ where: { email: { contains: "patprov" } } });
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
 
+    // Cleanup
     // 1. Create Patient
     const resPat = await request(app).post("/api/auth/register").set("X-Forwarded-For", "192.168.20.10").send({
       email: "patprov.test@example.com",
@@ -87,6 +70,8 @@ describe("Provider Authorization", () => {
   });
 
   afterAll(async () => {
+    await prisma.$executeRawUnsafe(`TRUNCATE TABLE "User", "Hospital", "Lab" CASCADE;`);
+
     // Cleanup
   });
 
@@ -116,6 +101,7 @@ describe("Provider Authorization", () => {
     
     // Will return 200 with empty array since patient isn't grantee of any session
     // Or if we strictly enforced roles middleware it would be 403. Currently it just filters by granteeUserId.
+    expect(res.status).toBe(200);
     expect(res.body).toEqual([]); 
   });
 

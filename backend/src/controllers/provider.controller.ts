@@ -23,6 +23,7 @@ export const ProviderController = {
       const sessionId = req.params.sessionId as string;
       const context = await ProviderService.getSharedSessionContext(providerId, sessionId);
       res.json(context);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       if (error.message === "Unauthorized" || error.message.includes("expired") || error.message.includes("not approved")) {
         res.status(403).json({ error: error.message });
@@ -38,6 +39,7 @@ export const ProviderController = {
       const sessionId = req.params.sessionId as string;
       const records = await ProviderService.getSharedRecords(providerId, sessionId);
       res.json(records);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       res.status(403).json({ error: error.message });
     }
@@ -50,6 +52,7 @@ export const ProviderController = {
       const recordId = req.params.recordId as string;
       const record = await ProviderService.getSharedRecordDetail(providerId, sessionId, recordId);
       res.json(record);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       res.status(403).json({ error: error.message });
     }
@@ -71,7 +74,10 @@ export const ProviderController = {
       const buffer = await storageProvider.get(doc.storageKey);
       res.setHeader("Content-Type", doc.mimeType);
       res.setHeader("Content-Disposition", `inline; filename="${doc.originalFilename}"`);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Content-Security-Policy", "default-src 'none'");
       res.send(buffer);
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Needed for test fixtures/types
     } catch (error: any) {
       res.status(403).json({ error: error.message });
     }

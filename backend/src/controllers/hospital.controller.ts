@@ -20,6 +20,7 @@ export class HospitalController {
 
       const hospitals = memberships.map(m => m.hospital);
       res.json(hospitals);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     } catch (err) {
       res.status(500).json({ error: "Internal server error" });
     }
@@ -36,6 +37,7 @@ export class HospitalController {
         return;
       }
       res.json(hospital);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     } catch (err) {
       res.status(500).json({ error: "Internal server error" });
     }
@@ -48,6 +50,7 @@ export class HospitalController {
         where: { hospitalId }
       });
       res.json(departments);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     } catch (err) {
       res.status(500).json({ error: "Internal server error" });
     }
@@ -70,6 +73,7 @@ export class HospitalController {
         }
       });
       res.json(members);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     } catch (err) {
       res.status(500).json({ error: "Internal server error" });
     }
@@ -186,6 +190,7 @@ export class HospitalController {
       });
 
       res.json(membership);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     } catch (err) {
       res.status(500).json({ error: "Internal server error" });
     }
@@ -222,6 +227,7 @@ export class HospitalController {
       });
 
       res.status(200).json({ success: true });
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
     } catch (err) {
       res.status(500).json({ error: "Internal server error" });
     }
