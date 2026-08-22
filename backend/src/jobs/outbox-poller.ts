@@ -38,7 +38,8 @@ export const pollOutbox = async () => {
 let pollerInterval: NodeJS.Timeout;
 
 export const startOutboxPoller = () => {
-  pollerInterval = setInterval(pollOutbox, 2000);
+  const interval = process.env.NODE_ENV === 'production' ? 10000 : 2000;
+  pollerInterval = setInterval(pollOutbox, interval);
 };
 
 export const stopOutboxPoller = () => {

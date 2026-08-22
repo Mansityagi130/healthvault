@@ -139,6 +139,7 @@ if (env.NODE_ENV === 'test') {
   }, {
     connection,
     concurrency: 5, // Limit document scanning concurrency
+    drainDelay: process.env.NODE_ENV === 'production' ? 15 : 5,
   });
 }
 
