@@ -6,6 +6,7 @@ import { AuthService } from "../services/auth.service.js";
 import { loginSchema, registerSchema } from "../schemas/auth.schema.js";
 import type { AuthRequest } from "../middleware/auth.middleware.js";
 import { decryptMfaSecret } from "../utils/crypto.js";
+import { AccountStatus } from "../generated/prisma/enums.js";
 
 const prisma = databaseClient.getClient();
 
@@ -61,6 +62,14 @@ export const AuthController = {
 
       const result = await AuthService.login(data, metadata);
       
+      if (result.verificationRequired) {
+        res.status(200).json({
+          verificationRequired: true,
+          userId: result.userId
+        });
+        return;
+      }
+
       if (result.mfaRequired) {
         res.status(200).json({
           mfaRequired: true,
@@ -299,6 +308,73 @@ export const AuthController = {
       res.status(200).json({ user });
     } catch (error: unknown) {
       res.status(500).json({ error: "Failed to fetch profile" });
+    }
+  },
+
+  async getPendingPhone(req: Request, res: Response) {
+    try {
+      const { userId } = req.params;
+      if (typeof userId !== "string") {
+        res.status(400).json({ error: "Invalid userId" });
+        return;
+      }
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { phone: true, status: true }
+      });
+      if (!user || user.status !== AccountStatus.PENDING_VERIFICATION || !user.phone) {
+        res.status(404).json({ error: "User not found or already verified" });
+        return;
+      }
+      const phone = user.phone;
+      const masked = phone.length > 7 
+        ? phone.slice(0, 3) + "*".repeat(phone.length - 7) + phone.slice(-4)
+        : phone;
+      res.status(200).json({ phone: masked });
+    } catch (error) {
+      res.status(400).json({ error: "Failed to get details" });
+    }
+  },
+
+  async verifyPhone(req: Request, res: Response) {
+    try {
+      const { userId, otp } = req.body;
+      if (!userId || !otp) {
+        res.status(400).json({ error: "userId and otp are required" });
+        return;
+      }
+
+      const metadata = {
+        userAgent: req.headers["user-agent"],
+        ip: req.ip,
+      };
+
+      const result = await AuthService.verifyPhone(userId, otp, metadata);
+      setRefreshTokenCookie(res, result.refreshToken);
+
+      res.status(200).json({
+        accessToken: result.accessToken,
+        user: result.user
+      });
+    } catch (error: unknown) {
+      console.error("VERIFY PHONE CATCH ERROR:", error);
+      res.status(400).json({ error: error instanceof Error ? error.message : "Phone verification failed" });
+    }
+  },
+
+  async resendPhoneOtp(req: Request, res: Response) {
+    try {
+      const { userId } = req.body;
+      if (!userId) {
+        res.status(400).json({ error: "userId is required" });
+        return;
+      }
+
+      const result = await AuthService.resendPhoneOtp(userId);
+      res.status(200).json(result);
+    } catch (error: unknown) {
+      console.error("RESEND OTP CATCH ERROR:", error);
+      res.status(400).json({ error: error instanceof Error ? error.message : "Failed to resend code" });
     }
   }
 };

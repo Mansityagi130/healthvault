@@ -7,7 +7,9 @@ import {
   refreshLimiter, 
   mfaVerifyLimiter, 
   passwordResetLimiter, 
-  passwordChangeLimiter 
+  passwordChangeLimiter,
+  phoneOtpVerifyLimiter,
+  phoneOtpResendLimiter
 } from "../middleware/rate-limiter.middleware.js";
 
 export const authRouter = Router();
@@ -18,6 +20,9 @@ authRouter.post("/refresh", refreshLimiter, AuthController.refresh);
 authRouter.post("/forgot-password", passwordResetLimiter, AuthController.forgotPassword);
 authRouter.post("/reset-password", passwordResetLimiter, AuthController.resetPassword);
 authRouter.post("/login/mfa", mfaVerifyLimiter, AuthController.loginMfa);
+authRouter.post("/verify-phone", phoneOtpVerifyLimiter, AuthController.verifyPhone);
+authRouter.post("/resend-phone-otp", phoneOtpResendLimiter, AuthController.resendPhoneOtp);
+authRouter.get("/pending-phone/:userId", AuthController.getPendingPhone);
 
 // Protected routes
 authRouter.post("/logout", authenticate, AuthController.logout);

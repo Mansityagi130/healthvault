@@ -11,6 +11,7 @@ enum AccountStatus {
   ACTIVE
   SUSPENDED
   DEACTIVATED
+  PENDING_VERIFICATION
 }
 
 enum ProfileVerificationStatus {
@@ -157,6 +158,10 @@ enum EncounterStatus {
 
 enum AuditAction {
   REGISTER
+  PHONE_VERIFICATION_REQUESTED
+  PHONE_VERIFICATION_SUCCESS
+  PHONE_VERIFICATION_FAILED
+  PHONE_VERIFICATION_RESENT
   LOGIN
   LOGOUT
   LOGIN_FAILED
@@ -276,6 +281,7 @@ model User {
   authSessions        AuthSession[]
   encounters          Encounter[]          @relation("EncounterProvider")
   passwordResetTokens PasswordResetToken[]
+  phoneVerifications  PhoneVerification[]
 }
 
 model PasswordResetToken {
@@ -288,6 +294,19 @@ model PasswordResetToken {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([tokenHash])
+}
+
+model PhoneVerification {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @db.Uuid
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  codeHash    String
+  expiresAt   DateTime
+  attempts    Int       @default(0)
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model PatientProfile {

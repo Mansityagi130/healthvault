@@ -29,8 +29,8 @@ export default function RegisterPage() {
     e.preventDefault();
     setError("");
     
-    if (!formData.email && !formData.phone) {
-      setError("Please provide either an email or phone number.");
+    if (!formData.phone) {
+      setError("Please provide a phone number.");
       return;
     }
 
@@ -41,27 +41,30 @@ export default function RegisterPage() {
         firstName: formData.firstName,
         lastName: formData.lastName,
         password: formData.password,
+        phone: formData.phone,
       };
       
       if (formData.email) payload.email = formData.email;
-      if (formData.phone) payload.phone = formData.phone;
 
       const res = await fetchWithAuth("/auth/register", {
         method: "POST",
         body: JSON.stringify(payload),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         if (data.error === "Validation error") {
-          throw new Error(data.details[0]?.message || "Invalid input");
+          throw new Error(data.details?.[0]?.message || data.details || "Invalid input");
         }
         throw new Error(data.error || "Registration failed");
       }
 
-      // After successful registration, route to login or auto-login
-      // For now, redirect to login
-      router.push("/login?registered=true");
+      if (data.verificationRequired) {
+        router.push(`/register/verify?userId=${data.userId}`);
+      } else {
+        router.push("/login?registered=true");
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || "Something went wrong. Please try again.");
@@ -126,10 +129,11 @@ export default function RegisterPage() {
           <input
             type="tel"
             name="phone"
+            required
             value={formData.phone}
             onChange={handleChange}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-600 focus:border-teal-600 text-slate-900"
-            placeholder="+1234567890 (optional if email provided)"
+            placeholder="e.g. +919456071969"
           />
         </div>
 

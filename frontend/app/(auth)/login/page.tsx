@@ -31,12 +31,17 @@ export default function LoginPage() {
         body: JSON.stringify(payload),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const data = await res.json();
         throw new Error(data.error || "Login failed");
       }
 
-      const data = await res.json();
+      if (data.verificationRequired) {
+        router.push(`/register/verify?userId=${data.userId}`);
+        return;
+      }
+
       if (data.mfaRequired) {
         sessionStorage.setItem("pendingMfaToken", data.mfaToken);
         router.push("/login/mfa");
