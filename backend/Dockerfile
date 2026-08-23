@@ -12,13 +12,13 @@ RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
 RUN npm ci
 
-# Copy Prisma schema and generate client
+# Copy Prisma schema, source, and TS config before generating client
 COPY prisma ./prisma
-RUN npx prisma generate
-
-# Copy source and configurations
 COPY tsconfig.json ./
 COPY src ./src
+
+# Generate Prisma client with full project context (tsconfig.json)
+RUN npx prisma generate
 
 # Compile TypeScript
 RUN npm run build
