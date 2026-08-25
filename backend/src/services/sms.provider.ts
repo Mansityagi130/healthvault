@@ -19,6 +19,7 @@ export class SmsProvider {
 
     // Local development/testing environment
     mockOtpStore.set(phone, otp);
+    console.log(`[SMS MOCK PROVIDER] Sending OTP ${otp} to phone ${phone}`);
     logger.info(`[SMS MOCK PROVIDER] Sending OTP ${otp} to phone ${phone}`);
   }
 

@@ -54,7 +54,12 @@ export const processAllMockJobs = async () => {
   }
 };
 
-if (env.NODE_ENV === 'test') {
+const isLocalDevUnreachableRedis = env.NODE_ENV === 'development' && (env.REDIS_URL.includes('red-') || env.REDIS_URL.includes('render'));
+
+if (env.NODE_ENV === 'test' || isLocalDevUnreachableRedis) {
+  if (isLocalDevUnreachableRedis) {
+    logger.info('[Queue] Detected internal Render Redis URL in local development environment. Falling back to in-memory mock queue.');
+  }
   backgroundQueue = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     add: async (name: string, data: any, opts?: any) => {
