@@ -565,6 +565,10 @@ export class AuthService {
   }
 
   static async forgotPassword(identity: string) {
+    if (env.NODE_ENV === "development") {
+      console.log('[DEV] forgotPassword: Starting forgot-password flow for identity:', identity);
+    }
+
     const user = await prisma.user.findFirst({
       where: {
         OR: [
@@ -614,6 +618,12 @@ export class AuthService {
         }
       }
     });
+
+    // DEVELOPMENT ONLY: Log reset URL for local testing
+    if (env.NODE_ENV === "development") {
+      const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${token}`;
+      console.log(`[DEV] Password reset URL for ${user.email || user.phone}: ${resetUrl}`);
+    }
   }
 
   static async resetPassword(token: string, newPass: string) {

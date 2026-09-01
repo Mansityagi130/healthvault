@@ -1,8 +1,13 @@
 import { databaseClient } from '../config/database.js';
 import { backgroundQueue } from './queue.js';
 import { logger } from '../utils/logger.js';
+import { env } from '../config/env.js';
 
 const prisma = databaseClient.getClient();
+
+// Check if we should skip outbox polling in local development with a remote database
+const isLocalDatabase = env.DATABASE_URL.includes('localhost') || env.DATABASE_URL.includes('127.0.0.1');
+const isLocalDevUnreachableDatabase = env.NODE_ENV === 'development' && !isLocalDatabase;
 
 export const pollOutbox = async () => {
   try {
@@ -38,6 +43,11 @@ export const pollOutbox = async () => {
 let pollerInterval: NodeJS.Timeout;
 
 export const startOutboxPoller = () => {
+  if (isLocalDevUnreachableDatabase) {
+    logger.info('[Outbox] Detected remote database URL in local development environment. Skipping outbox polling to avoid connection timeouts.');
+    return;
+  }
+
   const interval = process.env.NODE_ENV === 'production' ? 10000 : 2000;
   pollerInterval = setInterval(pollOutbox, interval);
 };

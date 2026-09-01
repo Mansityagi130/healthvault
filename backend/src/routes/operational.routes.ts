@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { databaseClient } from "../config/database.js";
 import { metrics } from "../utils/metrics.js";
+import { env } from "../config/env.js";
+import { logger } from "../utils/logger.js";
 
 export const operationalRouter = Router();
 
@@ -15,9 +17,14 @@ operationalRouter.get("/health/ready", async (req, res) => {
     const prisma = databaseClient.getClient();
     await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({ status: "ready" });
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Needed for test fixtures/types
   } catch (error) {
-    res.status(503).json({ status: "not_ready", error: "Database unavailable" });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error("Health readiness check failed", { error: errorMessage });
+    if (env.NODE_ENV === "development") {
+      res.status(503).json({ status: "not_ready", error: "Database unavailable", details: errorMessage });
+    } else {
+      res.status(503).json({ status: "not_ready" });
+    }
   }
 });
 

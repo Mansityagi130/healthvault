@@ -1,8 +1,11 @@
 import rateLimit from "express-rate-limit";
 import type { Request } from "express";
+import { env } from "../config/env.js";
 
 const shouldSkip = (req: Request) => {
-  return process.env.NODE_ENV === "test" && req.headers["x-forwarded-for"] !== "192.168.4.1";
+  const isTestEnv = env.NODE_ENV === "test";
+  const isDevEnv = env.NODE_ENV === "development";
+  return (isTestEnv || isDevEnv) && req.headers["x-forwarded-for"] !== "192.168.4.1";
 };
 
 // Limit registration to 5 accounts per hour per IP

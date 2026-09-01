@@ -4,6 +4,7 @@ const { Pool } = pg;
 
 import { PrismaClient } from "../generated/prisma/client.js";
 import { env } from "./env.js";
+import { logger } from "../utils/logger.js";
 
 export class DatabaseConfigurationError extends Error {
   public constructor(message: string) {
@@ -18,12 +19,15 @@ export const createPrismaClient = (connectionString: string): PrismaClient => {
     connectionString,
     max: 20, // Connection limits
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 5000,
-    // Note: statement_timeout can be configured here if necessary, but 
-    // Prisma transactions currently lack built-in query-level timeout knobs
-    // so we document that we rely on Postgres connectionTimeout and idleTimeout
-    // for safety rather than breaking integration tests with statement_timeout.
+    connectionTimeoutMillis: 15000, // 15 seconds to accommodate remote DB (Neon) cold-start and TLS handshakes
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
   });
+
+  pool.on("error", (err) => {
+    logger.error("Unexpected error on idle PostgreSQL client", { error: err.message });
+  });
+
   const adapter = new PrismaPg(pool);
 
   return new PrismaClient({ adapter });
